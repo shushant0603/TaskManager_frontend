@@ -1,37 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { taskAPI } from '../../services/api';
-import { useSelector } from 'react-redux';
-import {useDispatch}from 'react-redux'; //store
-import {set}from '../../redux/taskSlice';
+import { useSelector, useDispatch } from 'react-redux';
+import { addTask, fetchTasks, deleteTask, updateTask } from '../../redux/slices/taskSlice';
+import { FaSpinner, FaEdit, FaTrash } from 'react-icons/fa';
 
 const TaskManager = () => {
-  const [tasks, setTasks] = useState([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [taskId, setTaskId] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const user = useSelector((state) => state.auth.user);
-  const dispatch = useDispatch(); //store
+  const { tasks, status } = useSelector((state) => state.task);
+  const dispatch = useDispatch();
 
   useEffect(() => {
-    fetchTasks();
-  }, []);
+    dispatch(fetchTasks());
+  }, [dispatch]);
 
-  const fetchTasks = async () => {
-    try {
-      setIsLoading(true);
-      const data = await taskAPI.getTasks();
-      setTasks(data);
-      dispatch(set(data)); //store
-    } catch (err) {
-      console.error('Error fetching tasks:', err);
-      setError('Failed to fetch tasks. Please try again.');
-    } finally {
-      setIsLoading(false);
+  // Auto-hide success message after 2 seconds
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        setSuccess('');
+      }, 2000);
+      return () => clearTimeout(timer);
     }
-  };
+  }, [success]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,42 +38,33 @@ const TaskManager = () => {
     }
 
     try {
-      setIsLoading(true);
       if (taskId) {
-        await taskAPI.updateTask(taskId, title, description);
+        // Update existing task
+        await dispatch(updateTask({ id: taskId, title, description })).unwrap();
         setSuccess('Task updated successfully!');
       } else {
-        await taskAPI.createTask(title, description);
+        // Create new task
+        await dispatch(addTask({ title, description })).unwrap();
         setSuccess('Task created successfully!');
       }
-
-      await fetchTasks();
       setTitle('');
       setDescription('');
       setTaskId(null);
     } catch (err) {
-      console.error('Error saving task:', err);
-      setError(err.response?.data?.message || 'Failed to save task. Please try again.');
-    } finally {
-      setIsLoading(false);
+      setError(err.message || 'Failed to save task. Please try again.');
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (taskId) => {
     if (!window.confirm('Are you sure you want to delete this task?')) {
       return;
     }
 
     try {
-      setIsLoading(true);
-      await taskAPI.deleteTask(id);
+      await dispatch(deleteTask(taskId)).unwrap();
       setSuccess('Task deleted successfully!');
-      await fetchTasks();
     } catch (err) {
-      console.error('Error deleting task:', err);
-      setError(err.response?.data?.message || 'Failed to delete task. Please try again.');
-    } finally {
-      setIsLoading(false);
+      setError(err.message || 'Failed to delete task. Please try again.');
     }
   };
 
@@ -90,82 +75,127 @@ const TaskManager = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-blue-500 to-purple-600 py-10 px-4">
-      <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-6">
-        <h1 className="text-3xl font-bold text-center text-gray-800 mb-6">Task Manager</h1>
-        <p className="text-center text-gray-600 mb-6">Welcome, {user?.email}</p>
+    <div className="bg-white rounded-lg shadow-lg p-6">
+      <h2 className="text-2xl font-bold mb-6 text-gray-800">Task Manager</h2>
+      <p className="text-gray-600 mb-6">Welcome, {user?.email}</p>
 
-        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
-        {success && <p className="text-green-500 text-center mb-4">{success}</p>}
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 animate-fade">
+          {success}
+        </div>
+      )}
 
-        {/* Task Form */}
-        <form onSubmit={handleSubmit} className="mb-6">
-          <div className="mb-4">
-            <input
-              type="text"
-              placeholder="Task Title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={isLoading}
-            />
-          </div>
-          <div className="mb-4">
-            <textarea
-              placeholder="Task Description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={isLoading}
-            />
-          </div>
-          <button
-            type="submit"
-            className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition disabled:opacity-50"
-            disabled={isLoading}
-          >
-            {isLoading ? 'Processing...' : taskId ? 'Update Task' : 'Create Task'}
-          </button>
-        </form>
+      {/* Task Form */}
+      <form onSubmit={handleSubmit} className="mb-8">
+        <div className="mb-4">
+          <label className="block text-gray-700 text-sm font-bold mb-2">
+            Task Title
+          </label>
+          <input
+            type="text"
+            placeholder="Enter task title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={status === 'loading'}
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700 text-sm font-bold mb-2">
+            Description
+          </label>
+          <textarea
+            placeholder="Enter task description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            rows="3"
+            disabled={status === 'loading'}
+          />
+        </div>
+        <button
+          type="submit"
+          className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition disabled:opacity-50"
+          disabled={status === 'loading'}
+        >
+          {status === 'loading' ? (
+            <span className="flex items-center justify-center">
+              <FaSpinner className="animate-spin mr-2" />
+              Processing...
+            </span>
+          ) : taskId ? (
+            'Update Task'
+          ) : (
+            'Create Task'
+          )}
+        </button>
+      </form>
 
-        {/* Task List */}
-        {isLoading && tasks.length === 0 ? (
-          <p className="text-center text-gray-600">Loading tasks...</p>
-        ) : tasks.length === 0 ? (
-          <p className="text-center text-gray-600">No tasks yet. Create one above!</p>
-        ) : (
-          <ul className="space-y-4">
-            {tasks.map((task) => (
-              <li
-                key={task._id}
-                className="bg-gray-100 border border-gray-300 rounded-lg p-4 shadow-sm flex justify-between items-center"
-              >
+      {/* Task List */}
+      {status === 'loading' && tasks.length === 0 ? (
+        <div className="flex items-center justify-center h-32">
+          <FaSpinner className="animate-spin text-4xl text-blue-500" />
+        </div>
+      ) : tasks.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-gray-500 text-lg">No tasks yet.</p>
+          <p className="text-gray-400 mt-2">Create your first task above!</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {tasks.map((task) => (
+            <div
+              key={task._id}
+              className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+            >
+              <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800">{task.title}</h3>
-                  <p className="text-gray-600">{task.description}</p>
+                  <h3 className="text-xl font-semibold text-gray-800">
+                    {task.title}
+                  </h3>
+                  <p className="text-gray-600 mt-2">{task.description}</p>
                 </div>
-                <div className="space-x-2">
+                <div className="flex space-x-2">
                   <button
                     onClick={() => handleEdit(task)}
-                    className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition disabled:opacity-50"
-                    disabled={isLoading}
+                    className="text-blue-500 hover:text-blue-600"
+                    title="Edit"
                   >
-                    Edit
+                    <FaEdit />
                   </button>
                   <button
                     onClick={() => handleDelete(task._id)}
-                    className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition disabled:opacity-50"
-                    disabled={isLoading}
+                    className="text-red-500 hover:text-red-600"
+                    title="Delete"
                   >
-                    Delete
+                    <FaTrash />
                   </button>
                 </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+              </div>
+              <div className="mt-4 flex items-center justify-between">
+                <span className="text-sm text-gray-500">
+                  Created: {new Date(task.createdAt).toLocaleDateString()}
+                </span>
+                <span
+                  className={`px-3 py-1 rounded-full text-sm ${
+                    task.status === 'completed'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-yellow-100 text-yellow-800'
+                  }`}
+                >
+                  {task.status || 'pending'}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
