@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { taskAPI } from '../services/api';
+import { taskAPI } from '../../services/api';
 import { useSelector } from 'react-redux';
+import {useDispatch}from 'react-redux'; //store
+import {set}from '../../redux/taskSlice';
 
 const TaskManager = () => {
   const [tasks, setTasks] = useState([]);
@@ -11,6 +13,7 @@ const TaskManager = () => {
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const user = useSelector((state) => state.auth.user);
+  const dispatch = useDispatch(); //store
 
   useEffect(() => {
     fetchTasks();
@@ -21,6 +24,7 @@ const TaskManager = () => {
       setIsLoading(true);
       const data = await taskAPI.getTasks();
       setTasks(data);
+      dispatch(set(data)); //store
     } catch (err) {
       console.error('Error fetching tasks:', err);
       setError('Failed to fetch tasks. Please try again.');

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../services/api'; // Import the API methods
-import {useDispatch} from 'react-redux';
-import {login} from '../redux/authSlice'; // Import the login action
+import {useDispatch} from 'react-redux'; //store
+import {login} from '../redux/authSlice'; // store
 
 const Signup = () => {
   const [email, setEmail] = useState('');
@@ -10,7 +10,7 @@ const Signup = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const navigate = useNavigate(); // Initialize useNavigate
-  const dispatch=useDispatch();
+  const dispatch=useDispatch();  //store
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,7 +25,7 @@ const Signup = () => {
 
         
       // Dispatch login action to update Redux state
-      dispatch(login({ email }));
+      dispatch(login({ email })); //store
       
       // Redirect to login page after successful signup
       setTimeout(() => {

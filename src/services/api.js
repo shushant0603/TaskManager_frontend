@@ -1,7 +1,9 @@
 import axios from 'axios';
 
-const API_URL = 'https://taskmanager-backend-1-jcsk.onrender.com/api'; // Replace with your API URL
-
+const API_URL =
+  process.env.NODE_ENV === 'production'
+    ? 'https://taskmanager-backend-1-jcsk.onrender.com/api' // Production API URL
+    : 'http://localhost:5000/api'; // Replace with your API URL
 // Create a unique storage key for this tab
 const generateStorageKey = () => {
   return `auth_token_${Math.random().toString(36).substring(2, 15)}`;

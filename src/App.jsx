@@ -11,7 +11,7 @@ import './App.css'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import LandingPage from './pages/LandingPage'
-import Homepage from './pages/Homepage'
+import Homepage from './pages/Home/Homepage'
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {

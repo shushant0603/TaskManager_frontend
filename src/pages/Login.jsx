@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
-import {login} from '../redux/authSlice'; 
+import { useDispatch } from 'react-redux'; // store
+import {login} from '../redux/authSlice'; // store
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../services/api'; 
 
@@ -10,7 +10,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const navigate = useNavigate(); 
-  const dispatch = useDispatch(); 
+  const dispatch = useDispatch(); //store
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,7 +26,7 @@ const Login = () => {
       dispatch(login({ 
         email: data.user.email,
         id: data.user.id 
-      }));
+      }));     //store
       navigate('/home');
     } catch (err) {
       console.error('Error:', err.response?.data?.error || err.message);

@@ -18,12 +18,18 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-blue-600 text-white py-4 px-8 flex justify-between items-center">
-      <div>
-        <Link to="/" className="text-2xl font-bold hover:text-gray-200">
-          TaskMaster AI
-        </Link>
-      </div>
+    <nav className=" bg-[#FFEFE0] text-white py-4 px-8 flex justify-between items-center">
+      <div className="flex items-center space-x-2">
+    {/* Add the logo image */}
+    <img
+      src="Logo(Nav).png" // Replace with the actual path to your logo
+      alt="TaskMaster AI Logo"
+      className="h-9 w-9" // Adjust height and width as needed
+    />
+    <Link to="/" className="text-2xl font-bold text-black hover:text-gray-200">
+      TaskMaster AI
+    </Link>
+  </div>
       <div className="space-x-4">
         {!isAuthenticated ? (
           <>
